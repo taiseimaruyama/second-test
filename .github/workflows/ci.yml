@@ -1,0 +1,43 @@
+name: CI (pytest & artifact)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+            python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run pytest (save stdout)
+        run: |
+          pytest -q | tee pytest.out
+
+      - name: Generate report
+        run: |
+          python generate_report.py
+
+      - name: Upload artifact (report.txt)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: |
+            report.txt
+            pytest.out
+          if-no-files-found: error
+          retention-days: 14
